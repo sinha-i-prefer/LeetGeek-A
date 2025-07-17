@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "874400551274",
+    "project_id": "leetrack-38425",
+    "storage_bucket": "leetrack-38425.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:874400551274:android:01ba5c00d87245b19dd513",
+        "android_client_info": {
+          "package_name": "bruh.leet.project"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdcwDCvSVYqmbeoMfT-qEwh2dt1EvtUqE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:874400551274:android:a6c5de96c29f4e399dd513",
+        "android_client_info": {
+          "package_name": "com.example.leetgeek"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdcwDCvSVYqmbeoMfT-qEwh2dt1EvtUqE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

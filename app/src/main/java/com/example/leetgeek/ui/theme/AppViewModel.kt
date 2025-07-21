@@ -44,6 +44,8 @@ class AppViewModel : ViewModel() {
     private val _leaderboardUiState = MutableStateFlow<LeaderboardUiState>(LeaderboardUiState.Idle)
     val leaderboardUiState = _leaderboardUiState.asStateFlow()
 
+    private val _updateStatus = MutableStateFlow<String?>(null)
+    val updateStatus = _updateStatus.asStateFlow()
 
     fun fetchData(username: String) {
         if (username.isBlank()) {
@@ -139,5 +141,23 @@ class AppViewModel : ViewModel() {
                 _leaderboardUiState.value = LeaderboardUiState.Error("Failed to load leaderboard.")
             }
         }
+    }
+
+    fun triggerAllUsersUpdate() {
+        viewModelScope.launch {
+            _updateStatus.value = "Updating all user profiles..."
+            try {
+                // Call the cron job endpoint directly
+                httpClient.get("https://leet-seek.vercel.app/api?source=cron")
+                _updateStatus.value = "✅ Update request sent successfully!"
+            } catch (e: Exception) {
+                Log.e("UpdateAll", "Failed to trigger all-users update", e)
+                _updateStatus.value = "❌ Update failed. Please try again later."
+            }
+        }
+    }
+
+    fun clearUpdateStatus() {
+        _updateStatus.value = null
     }
 }

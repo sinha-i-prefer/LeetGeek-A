@@ -1,18 +1,14 @@
 package com.example.leetgeek
 
-import LeetCodeUserScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
-import com.example.leetgeek.ui.theme.AppViewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.leetgeek.ui.theme.LeetGeekTheme
 
 class MainActivity : ComponentActivity() {
@@ -21,11 +17,21 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             LeetGeekTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    MemberList(modifier = Modifier.padding(innerPadding))
+                val navController = rememberNavController()
+                // This is the root NavHost for the entire app
+                NavHost(navController = navController, startDestination = Screen.Login.route) {
+                    composable(Screen.Login.route) {
+                        LoginScreen(navController = navController)
+                    }
+                    composable(
+                        route = Screen.Main.route,
+                        arguments = listOf(navArgument("username") { type = NavType.StringType })
+                    ) { backStackEntry ->
+                        val username = backStackEntry.arguments?.getString("username") ?: ""
+                        MainScreen(username = username)
+                    }
                 }
             }
         }
     }
 }
-

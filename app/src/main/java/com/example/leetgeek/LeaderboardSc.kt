@@ -24,6 +24,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +39,7 @@ import kotlinx.coroutines.tasks.await
 
 @Composable
 fun MemberCard(user: LeetCodeUser, modifier: Modifier = Modifier) {
-    var expand by remember { mutableStateOf(false) }
+    var expand by rememberSaveable { mutableStateOf(false) }
     Card(
         modifier = modifier
             .fillMaxWidth()

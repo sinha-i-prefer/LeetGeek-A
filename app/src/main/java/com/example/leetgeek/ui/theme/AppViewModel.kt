@@ -46,13 +46,44 @@ class AppViewModel : ViewModel() {
 
 
     fun fetchData(username: String) {
-        // ... existing fetchData logic remains the same
+        if (username.isBlank()) {
+            _uiState.value = UiState.Error("Username cannot be empty.")
+            return
+        }
+
+        viewModelScope.launch {
+            _uiState.value = UiState.Loading
+
+            val docRef = db.collection("leetcodeUsers").document(username)
+            docRef.addSnapshotListener { snapshot, e ->
+                if (e != null) {
+                    _uiState.value = UiState.Error("Firestore listener failed: ${e.message}")
+                    return@addSnapshotListener
+                }
+
+                if (snapshot != null && snapshot.exists()) {
+                    val user = snapshot.toObject(LeetCodeUser::class.java)
+                    if (user != null) {
+                        _uiState.value = UiState.Success(user)
+                    } else {
+                        _uiState.value = UiState.Error("Failed to parse user data.")
+                    }
+                }
+            }
+            try {
+                httpClient.get(vercelApiUrl) {
+                    parameter("username", username)
+                }
+
+            } catch (e: Exception) {
+
+                if (_uiState.value is UiState.Loading) {
+                    _uiState.value = UiState.Error("Failed to trigger Vercel function: ${e.message}")
+                }
+            }
+        }
     }
 
-    /**
-     * Fetches all users from the 'leetcodeUsers' collection,
-     * processes the data, and updates the leaderboard UI state.
-     */
     fun fetchLeaderboard() {
         viewModelScope.launch {
             _leaderboardUiState.value = LeaderboardUiState.Loading

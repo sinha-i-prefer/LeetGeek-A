@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +30,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.leetgeek.ui.theme.AppViewModel
+import com.example.leetgeek.ui.theme.LeaderboardUiState
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -91,94 +95,24 @@ fun MemberCard(user: LeetCodeUser, modifier: Modifier = Modifier) {
     }
 }
 
+// In MemberList.kt
+
 @Composable
-fun MemberList(modifier: Modifier = Modifier) {
-    var users by remember { mutableStateOf<List<LeetCodeUser>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
+fun MemberList(
+    modifier: Modifier = Modifier,
+    viewModel: AppViewModel = viewModel()
+) {
+    val uiState by viewModel.leaderboardUiState.collectAsState()
 
     LaunchedEffect(Unit) {
-        try {
-            isLoading = true
-            error = null
-
-            val firestore = FirebaseFirestore.getInstance()
-            val snapshot = firestore.collection("leetcodeUsers").get().await()
-
-            Log.d("Leaderboard", "Documents found: ${snapshot.documents.size}")
-
-            val fetchedUsers = mutableListOf<LeetCodeUser>()
-
-            for (document in snapshot.documents) {
-                try {
-                    Log.d("Leaderboard", "Processing document: ${document.id}")
-                    Log.d("Leaderboard", "Document data: ${document.data}")
-
-                    // Manual parsing to handle potential data issues
-                    val name = document.getString("name") ?: ""
-                    val username = document.getString("username") ?: ""
-                    val problemsSolved = document.get("problems_solved") as? Map<String, Any> ?: emptyMap()
-
-                    // Convert problems_solved values to Long
-                    val problemsMap = problemsSolved.mapValues { (_, value) ->
-                        when (value) {
-                            is Long -> value
-                            is Int -> value.toLong()
-                            is Double -> value.toLong()
-                            is String -> value.toLongOrNull() ?: 0L
-                            else -> 0L
-                        }
-                    }
-
-                    // Handle last_submission
-                    val lastSubmissionData = document.get("last_submission") as? Map<String, Any>
-                    val lastSubmission = lastSubmissionData?.let { data ->
-                        LastSubmission(
-                            title = data["title"] as? String ?: "",
-                            lang = data["lang"] as? String ?: "",
-                            url = data["url"] as? String ?: "",
-                            timestamp = data["timestamp"] as? String ?: ""
-                        )
-                    }
-
-                    val user = LeetCodeUser(
-                        name = name,
-                        username = username,
-                        problems_solved = problemsMap,
-                        last_submission = lastSubmission,
-                        rank = 0 // Will be set later
-                    )
-
-                    fetchedUsers.add(user)
-                    Log.d("Leaderboard", "Successfully parsed user: ${user.username}")
-
-                } catch (e: Exception) {
-                    Log.e("Leaderboard", "Error parsing document ${document.id}: ${e.message}")
-                }
-            }
-
-            Log.d("Leaderboard", "Total users parsed: ${fetchedUsers.size}")
-
-            // Sort by total problems solved (descending) and assign ranks
-            val rankedUsers = fetchedUsers
-                .sortedByDescending { it.problems_solved["All"] ?: 0 }
-                .mapIndexed { index, user ->
-                    user.copy(rank = index + 1)
-                }
-
-            users = rankedUsers
-            isLoading = false
-
-        } catch (e: Exception) {
-            Log.e("Leaderboard", "Error loading leaderboard: ${e.message}")
-            error = "Failed to load leaderboard: ${e.message}"
-            isLoading = false
-        }
+        viewModel.fetchLeaderboard()
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        when {
-            isLoading -> {
+        when (val state = uiState) {
+            // Treat Idle and Loading the same to prevent a blank flash
+            is LeaderboardUiState.Idle,
+            is LeaderboardUiState.Loading -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -193,40 +127,34 @@ fun MemberList(modifier: Modifier = Modifier) {
                     }
                 }
             }
-            error != null -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = error!!,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = "Check logs for details",
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 4.dp)
-                        )
-                    }
-                }
-            }
-            users.isEmpty() -> {
+            is LeaderboardUiState.Error -> {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No users found in leaderboard",
+                        text = state.message,
+                        color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
             }
-            else -> {
-                LazyColumn(modifier = modifier) {
-                    items(users) { user ->
-                        MemberCard(user = user)
+            is LeaderboardUiState.Success -> {
+                if (state.users.isEmpty()) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No users found in leaderboard.",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                } else {
+                    LazyColumn {
+                        items(state.users) { user ->
+                            MemberCard(user = user)
+                        }
                     }
                 }
             }

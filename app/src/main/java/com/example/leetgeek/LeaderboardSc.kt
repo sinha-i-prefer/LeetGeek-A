@@ -3,6 +3,7 @@ package com.example.leetgeek
 import LastSubmission
 import LeetCodeUser
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -28,6 +30,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -44,7 +48,10 @@ fun MemberCard(user: LeetCodeUser, modifier: Modifier = Modifier) {
         modifier = modifier
             .fillMaxWidth()
             .clickable { expand = !expand }
-            .padding(vertical = 4.dp, horizontal = 8.dp)
+            .padding(vertical = 4.dp, horizontal = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+        )
     ) {
         Row(modifier = Modifier.padding(12.dp)) {
             Text(
@@ -109,52 +116,62 @@ fun MemberList(
         viewModel.fetchLeaderboard()
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        when (val state = uiState) {
-            // Treat Idle and Loading the same to prevent a blank flash
-            is LeaderboardUiState.Idle,
-            is LeaderboardUiState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator()
-                        Text(
-                            text = "Loading leaderboard...",
-                            modifier = Modifier.padding(top = 8.dp),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+    Box {
+        Image(
+            painter = painterResource(R.drawable.leadbg),
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+        Box(modifier = modifier.fillMaxSize()) {
+            when (val state = uiState) {
+                // Treat Idle and Loading the same to prevent a blank flash
+                is LeaderboardUiState.Idle,
+                is LeaderboardUiState.Loading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator()
+                            Text(
+                                text = "Loading leaderboard...",
+                                modifier = Modifier.padding(top = 8.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
                     }
                 }
-            }
-            is LeaderboardUiState.Error -> {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = state.message,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-            is LeaderboardUiState.Success -> {
-                if (state.users.isEmpty()) {
+
+                is LeaderboardUiState.Error -> {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No users found in leaderboard.",
+                            text = state.message,
+                            color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
-                } else {
-                    LazyColumn {
-                        items(state.users) { user ->
-                            MemberCard(user = user)
+                }
+
+                is LeaderboardUiState.Success -> {
+                    if (state.users.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No users found in leaderboard.",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    } else {
+                        LazyColumn {
+                            items(state.users) { user ->
+                                MemberCard(user = user)
+                            }
                         }
                     }
                 }

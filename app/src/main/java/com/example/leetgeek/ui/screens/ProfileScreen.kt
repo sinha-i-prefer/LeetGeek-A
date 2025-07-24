@@ -1,5 +1,5 @@
 // In ProfileScreen.kt
-package com.example.leetgeek
+package com.example.leetgeek.ui.screens
 
 import LeetCodeUser
 import androidx.compose.foundation.Image
@@ -16,8 +16,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.leetgeek.ui.theme.AppViewModel
-import com.example.leetgeek.ui.theme.UiState
+import com.example.leetgeek.R
+import com.example.leetgeek.AppViewModel
+import com.example.leetgeek.UiState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)

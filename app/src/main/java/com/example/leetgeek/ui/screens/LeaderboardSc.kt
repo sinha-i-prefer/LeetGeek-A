@@ -1,8 +1,6 @@
 package com.example.leetgeek
 
-import LastSubmission
 import LeetCodeUser
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -12,12 +10,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,7 +28,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -33,16 +35,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.leetgeek.ui.theme.AppViewModel
-import com.example.leetgeek.ui.theme.LeaderboardUiState
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
 
 @Composable
-fun MemberCard(user: LeetCodeUser, modifier: Modifier = Modifier) {
+fun MemberCard(
+    user: LeetCodeUser,
+    currentUsername: String,
+    onAddFriend: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     var expand by rememberSaveable { mutableStateOf(false) }
     Card(
         modifier = modifier
@@ -53,15 +55,18 @@ fun MemberCard(user: LeetCodeUser, modifier: Modifier = Modifier) {
             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
         )
     ) {
-        Row(modifier = Modifier.padding(12.dp)) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
                 text = "#${user.rank}",
                 modifier = Modifier.padding(4.dp),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.width(24.dp))
-            Column {
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = user.name,
                     style = MaterialTheme.typography.titleMedium,
@@ -99,15 +104,23 @@ fun MemberCard(user: LeetCodeUser, modifier: Modifier = Modifier) {
                     }
                 }
             }
+            if (user.username != currentUsername) {
+                IconButton(onClick = { onAddFriend(user.username) }) {
+                    Icon(
+                        imageVector = Icons.Default.AccountCircle,
+                        contentDescription = "Add Friend",
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
         }
     }
 }
 
-// In MemberList.kt
-
 @Composable
 fun MemberList(
     modifier: Modifier = Modifier,
+    username: String, // current user's username
     viewModel: AppViewModel = viewModel()
 ) {
     val uiState by viewModel.leaderboardUiState.collectAsState()
@@ -125,7 +138,6 @@ fun MemberList(
         )
         Box(modifier = modifier.fillMaxSize()) {
             when (val state = uiState) {
-                // Treat Idle and Loading the same to prevent a blank flash
                 is LeaderboardUiState.Idle,
                 is LeaderboardUiState.Loading -> {
                     Box(
@@ -170,43 +182,18 @@ fun MemberList(
                     } else {
                         LazyColumn {
                             items(state.users) { user ->
-                                MemberCard(user = user)
+                                MemberCard(
+                                    user = user,
+                                    currentUsername = username,
+                                    onAddFriend = { friendUsername ->
+                                        viewModel.addFriend(username, friendUsername)
+                                    }
+                                )
                             }
                         }
                     }
                 }
             }
-        }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MemberListPreview() {
-    val mockUsers = listOf(
-        LeetCodeUser(
-            name = "John Smith",
-            username = "jsmith",
-            problems_solved = mapOf("All" to 180L, "Easy" to 80L, "Medium" to 80L, "Hard" to 20L),
-            rank = 1
-        ),
-        LeetCodeUser(
-            name = "Himanshu Sinha",
-            username = "sinha_i_prefer",
-            problems_solved = mapOf("All" to 307L, "Easy" to 69L, "Medium" to 150L, "Hard" to 88L),
-            rank = 2
-        ),
-        LeetCodeUser(
-            name = "Jane Doe",
-            username = "janedoe",
-            problems_solved = mapOf("All" to 250L, "Easy" to 100L, "Medium" to 100L, "Hard" to 50L),
-            rank = 3
-        )
-    )
-
-    LazyColumn {
-        items(mockUsers) { user ->
-            MemberCard(user = user)
         }
     }
 }

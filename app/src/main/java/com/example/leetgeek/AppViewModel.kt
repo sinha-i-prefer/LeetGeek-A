@@ -1,4 +1,4 @@
-package com.example.leetgeek.ui.theme
+package com.example.leetgeek
 
 import LeetCodeUser
 import LastSubmission // Make sure this is imported if in another file
@@ -10,6 +10,7 @@ import com.google.firebase.ktx.Firebase
 import io.ktor.client.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -30,6 +31,12 @@ sealed class LeaderboardUiState {
     data class Error(val message: String) : LeaderboardUiState()
 }
 
+sealed interface FriendsUiState {
+    object Loading : FriendsUiState
+    data class Success(val friends: List<LeetCodeUser>) : FriendsUiState
+    data class Error(val message: String) : FriendsUiState
+}
+
 class AppViewModel : ViewModel() {
 
     private val db = Firebase.firestore
@@ -46,6 +53,9 @@ class AppViewModel : ViewModel() {
 
     private val _updateStatus = MutableStateFlow<String?>(null)
     val updateStatus = _updateStatus.asStateFlow()
+
+    private val _friendsUiState = MutableStateFlow<FriendsUiState>(FriendsUiState.Loading)
+    val friendsUiState: StateFlow<FriendsUiState> = _friendsUiState
 
     fun fetchData(username: String) {
         if (username.isBlank()) {
@@ -153,6 +163,52 @@ class AppViewModel : ViewModel() {
             } catch (e: Exception) {
                 Log.e("UpdateAll", "Failed to trigger all-users update", e)
                 _updateStatus.value = "❌ Update failed. Please try again later."
+            }
+        }
+    }
+
+    fun addFriend(currentUsername: String, friendUsername: String) {
+        viewModelScope.launch {
+            if (currentUsername.isBlank() || friendUsername.isBlank()) return@launch
+
+            val friendData = mapOf("username" to friendUsername)
+            db.collection("users").document(currentUsername)
+                .collection("friends").document(friendUsername)
+                .set(friendData)
+                .await()
+        }
+    }
+
+    fun fetchFriends(username: String) {
+        _friendsUiState.value = FriendsUiState.Loading
+        viewModelScope.launch {
+            if (username.isBlank()) {
+                _friendsUiState.value = FriendsUiState.Error("User not logged in.")
+                return@launch
+            }
+            try {
+                val friendRefs = db.collection("users").document(username)
+                    .collection("friends").get().await()
+                val friendUsernames = friendRefs.documents.mapNotNull { it.id }
+
+                if (friendUsernames.isEmpty()) {
+                    _friendsUiState.value = FriendsUiState.Success(emptyList())
+                    return@launch
+                }
+
+                val friendsList = mutableListOf<LeetCodeUser>()
+                for (friendUsername in friendUsernames) {
+                    val friendDoc = db.collection("users").document(friendUsername).get().await()
+                    friendDoc.toObject(LeetCodeUser::class.java)?.let {
+                        friendsList.add(it)
+                    }
+                }
+                friendsList.sortBy { it.rank }
+
+                _friendsUiState.value = FriendsUiState.Success(friendsList)
+
+            } catch (e: Exception) {
+                _friendsUiState.value = FriendsUiState.Error("Failed to load friends: ${e.message}")
             }
         }
     }

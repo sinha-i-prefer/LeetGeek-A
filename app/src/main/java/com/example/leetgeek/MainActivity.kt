@@ -9,6 +9,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.leetgeek.ui.screens.LoginScreen
+import com.example.leetgeek.ui.screens.MainScreen
 import com.example.leetgeek.ui.theme.LeetGeekTheme
 
 class MainActivity : ComponentActivity() {

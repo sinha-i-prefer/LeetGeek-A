@@ -1,4 +1,4 @@
-package com.example.leetgeek
+package com.example.leetgeek.ui.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -22,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.leetgeek.R
+import com.example.leetgeek.Screen
 
 @Composable
 fun LoginScreen(navController: NavController) {

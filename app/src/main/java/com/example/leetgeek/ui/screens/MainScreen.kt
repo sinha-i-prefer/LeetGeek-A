@@ -1,4 +1,4 @@
-package com.example.leetgeek
+package com.example.leetgeek.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
@@ -11,11 +11,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
+import com.example.leetgeek.BottomNavItem
+import com.example.leetgeek.MemberList
 
 @Composable
 fun MainScreen(username: String) {
     val navController = rememberNavController()
-    val bottomNavItems = listOf(BottomNavItem.Profile, BottomNavItem.Leaderboard)
+    // Add Friends to the list of bottom navigation items
+    val bottomNavItems = listOf(BottomNavItem.Profile, BottomNavItem.Leaderboard, BottomNavItem.Friends)
 
     Scaffold(
         bottomBar = {
@@ -65,8 +68,11 @@ fun MainScreen(username: String) {
                 ProfileScreen(username = username)
             }
             composable(BottomNavItem.Leaderboard.route) {
-                // Your existing MemberList composable can be called here
-                MemberList()
+                // Pass username to know who is adding friends
+                MemberList(username = username)
+            }
+            composable(BottomNavItem.Friends.route) {
+                FriendsScreen(username = username)
             }
         }
     }
